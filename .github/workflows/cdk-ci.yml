@@ -1,0 +1,92 @@
+name: CDK CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'infrastructure/**'
+  push:
+    branches: [develop]
+    paths:
+      - 'infrastructure/**'
+
+permissions:
+  id-token: write   # Requerido para OIDC
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  CDK_DEFAULT_REGION: us-east-1
+  NODE_VERSION: '18'
+
+jobs:
+  # ─── PR → main: valida que el código TypeScript compila y CDK synth pasa ──
+  synth:
+    name: CDK Synth (PR validation)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: infrastructure/package-lock.json
+
+      - name: Install dependencies
+        working-directory: infrastructure
+        run: npm ci
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # SETUP REQUERIDO: crear el IAM Role con OIDC trust policy.
+          # Ver docs/setup-github-oidc.md para los pasos detallados.
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: CDK Synth
+        working-directory: infrastructure
+        run: npx cdk synth
+        env:
+          CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+
+  # ─── Push → develop: muestra qué cambiaría en AWS ─────────────────────────
+  diff:
+    name: CDK Diff (develop)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: infrastructure/package-lock.json
+
+      - name: Install dependencies
+        working-directory: infrastructure
+        run: npm ci
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: CDK Diff
+        working-directory: infrastructure
+        run: npx cdk diff
+        env:
+          CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+        # CDK diff no falla si hay cambios — solo los muestra.
+        # Falla solo si hay errores de síntesis.
+        continue-on-error: false

@@ -1,0 +1,37 @@
+# ─── CDK ──────────────────────────────────────────────────────────────────────
+cdk.out/
+infrastructure/node_modules/
+infrastructure/*.js
+infrastructure/*.d.ts
+infrastructure/**/*.js
+infrastructure/**/*.d.ts
+
+# ─── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# ─── Variables de entorno (nunca commitear) ───────────────────────────────────
+.env.dev
+.env.staging
+.env.prod
+.env.local
+
+# ─── Node ─────────────────────────────────────────────────────────────────────
+node_modules/
+
+# ─── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── IDE ──────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
