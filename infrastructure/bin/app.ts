@@ -2,6 +2,10 @@
 import 'dotenv/config';
 import * as cdk from 'aws-cdk-lib';
 import { StorageStack } from '../lib/storage-stack';
+import { GovernanceStack } from '../lib/governance-stack';
+import { IngestionStack } from '../lib/ingestion-stack';
+import { ProcessingStack } from '../lib/processing-stack';
+import { ObservabilityStack } from '../lib/observability-stack';
 
 const app = new cdk.App();
 
@@ -22,9 +26,49 @@ const defaultTags: Record<string, string> = {
   ManagedBy: 'cdk',
 };
 
-new StorageStack(app, `${projectName}-${stage}-storage`, {
+const storageStack = new StorageStack(app, `${projectName}-${stage}-storage`, {
   env: defaultEnv,
   tags: defaultTags,
   stage,
   projectName,
+});
+
+const governanceStack = new GovernanceStack(app, `${projectName}-${stage}-governance`, {
+  env: defaultEnv,
+  tags: defaultTags,
+  stage,
+  projectName,
+  rawBucket: storageStack.rawBucket,
+  processedBucket: storageStack.processedBucket,
+  artifactsBucket: storageStack.artifactsBucket,
+});
+
+const ingestionStack = new IngestionStack(app, `${projectName}-${stage}-ingestion`, {
+  env: defaultEnv,
+  tags: defaultTags,
+  stage,
+  projectName,
+  rawBucket: storageStack.rawBucket,
+  lambdaTriggerRole: governanceStack.lambdaTriggerRole,
+});
+
+new ProcessingStack(app, `${projectName}-${stage}-processing`, {
+  env: defaultEnv,
+  tags: defaultTags,
+  stage,
+  projectName,
+  rawBucket: storageStack.rawBucket,
+  processedBucket: storageStack.processedBucket,
+  artifactsBucket: storageStack.artifactsBucket,
+  glueRole: governanceStack.glueRole,
+  jobLocksTableName: ingestionStack.jobLocksTable.tableName,
+});
+
+new ObservabilityStack(app, `${projectName}-${stage}-observability`, {
+  env: defaultEnv,
+  tags: defaultTags,
+  stage,
+  projectName,
+  monthlyBudgetUsd: 15,
+  alertEmail: process.env.ALERT_EMAIL,
 });
