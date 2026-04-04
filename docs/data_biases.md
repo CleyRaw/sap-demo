@@ -57,6 +57,30 @@ OCs urgentes (`EKKO.BSART = 'UB'`) con precio +20%.
 11. ¿Tiempo de entrega por país del cliente?
 12. ¿Materiales con más OCs urgentes (BSART=UB)? ¿Coinciden con EISBE=0?
 
+### Revalorización de moneda extranjera
+13. ¿Cuál es la diferencia de valorización por moneda (USD, EUR, GBP) al cierre?
+14. ¿Qué acreedor tiene mayor exposición cambiaria en partidas abiertas?
+15. ¿Cuánto impacta el TC de cierre vs TC de contabilización en el resultado?
+
+---
+
+## Modelo: Revalorización de Acreedores/Deudores
+
+Tablas involucradas: BSIK, BSAK, BSID, BSAD, BSIS, BSAS, TCURR, TCURF, KNA1, LFA1.
+Query de referencia: `modelos/revalorizacion_acreedores_deudores.sql`
+
+### Estructura de datos
+- **BSIK/BSAK**: Partidas abiertas/compensadas de acreedores. HKONT=`0212011100`.
+- **BSID/BSAD**: Partidas abiertas/compensadas de deudores. HKONT=`0111071100`.
+- **BSIS/BSAS**: Partidas abiertas/compensadas de libro mayor (cuentas FX).
+- **TCURR**: Tipos de cambio KURST='CLEN' a CLP. Monedas: USD, EUR, GBP.
+- **TCURF**: Factores de conversión (1:1 para todas las monedas).
+
+### Multi-moneda
+- AP: 55% USD, 20% EUR, 5% GBP, 20% CLP (según proveedor).
+- AR: 100% USD (venta de cobre en commodities).
+- DMBTR = equivalente CLP al TC medio del periodo.
+
 ---
 
 ## Subir datos a S3

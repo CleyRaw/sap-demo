@@ -1,5 +1,11 @@
 #!/usr/bin/env node
-import 'dotenv/config';
+import * as path from 'path';
+import { config } from 'dotenv';
+
+// Load .env.{ENV_FILE} or .env by default — e.g. ENV_FILE=prod loads .env.prod
+const envFile = process.env.ENV_FILE ?? '';
+config({ path: path.resolve(__dirname, '..', envFile ? `.env.${envFile}` : '.env') });
+
 import * as cdk from 'aws-cdk-lib';
 import { StorageStack } from '../lib/storage-stack';
 import { GovernanceStack } from '../lib/governance-stack';
